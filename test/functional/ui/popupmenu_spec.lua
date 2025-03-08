@@ -5145,6 +5145,29 @@ describe('builtin popupmenu', function()
         ]])
       end)
 
+      -- oldtest: Test_wildmenu_pum_hl_nonfirst()
+      it('highlight matched text in the middle in cmdline pum', function()
+        exec([[
+          set wildoptions=pum wildchar=<tab> wildmode=noselect,full
+          hi PmenuMatchSel  guifg=Blue guibg=Grey
+          hi PmenuMatch     guifg=Blue guibg=Plum1
+          func T(a, c, p)
+            return ["oneA", "o neBneB", "aoneC"]
+          endfunc
+          command -nargs=1 -complete=customlist,T MyCmd
+        ]])
+
+        feed(':MyCmd ne<tab>')
+        screen:expect([[
+                                          |
+          {1:~                               }|*15
+          {1:~     }{n: o}{mn:ne}{n:A           }{1:          }|
+          {1:~     }{n: o }{mn:ne}{n:BneB       }{1:          }|
+          {1:~     }{n: ao}{mn:ne}{n:C          }{1:          }|
+          :MyCmd ne^                       |
+        ]])
+      end)
+
       it(
         'cascading highlights for matched text (PmenuMatch, PmenuMatchSel) in cmdline pum',
         function()
@@ -7287,6 +7310,7 @@ describe('builtin popupmenu', function()
             return [#{word: "func ()\n\t\nend", abbr: "function ()",}, #{word: "foobar"}, #{word: "你好\n\t\n我好"}]
           endfunc
           set omnifunc=Omni_test
+          inoremap <F5> <Cmd>call complete(col('.'), [ "my\n\tmulti\nline", "my\n\t\tmulti\nline" ])<CR>
         ]])
 
         feed('S<C-X><C-O>')
@@ -7426,6 +7450,21 @@ describe('builtin popupmenu', function()
           {8:    }                            |
             end^                           |
           end                             |
+          {1:~                               }|*14
+          {2:-- INSERT --}                    |
+        ]])
+
+        feed('<Esc>ggVGd')
+        command('filetype indent on')
+        command('setlocal noautoindent shiftwidth& tabstop&')
+        command('setlocal ft=lua')
+        feed('S<F5>')
+        screen:expect([[
+          {8:my}                              |
+          {8:        multi}                   |
+          {8:line}^                            |
+          {s:my^@  multi^@line   }{1:            }|
+          {n:my^@    multi^@line }{1:            }|
           {1:~                               }|*14
           {2:-- INSERT --}                    |
         ]])
